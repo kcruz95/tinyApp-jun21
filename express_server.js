@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -9,12 +10,27 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({extended: true}));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
+app.use(morgan('dev'));
 
 const urlDatabase = {
-  "b2xVn2": {longURL: "http://www.lighthouselabs.ca"},
-  "9sm5xK": {longURL: "http://www.google.ca"},
-  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/"},
-  "i3BoGr": {longURL: "https://www.bbc.co.uk/"}
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "dm3"},
+  "9sm5xK": {longURL: "http://www.google.ca", user_id: "dm3"},
+  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "dm3"},
+  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "dm3"}
+};
+
+const users = {
+  "dm3": {
+    user_id: "dm3",
+    email: "1@1.com",
+    //change to 'hash' later (ln 141)
+    password: "1"
+  },
+  "Kakao": {
+    user_id: "Kakao",
+    email: "2@2.com",
+    password: "2"
+  }
 };
 
 function generateRandomString() {
@@ -28,19 +44,27 @@ function generateRandomString() {
   return result;
 }
 
+const emailChecker = (email, users) => {
+  for (let user in users) {
+    if (email === users[user].email) {
+      return users[user];
+    }
+  } return false;
+};
+
 // GET fxns
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
+// app.get("/", (req, res) => {
+//   res.send("Hello!");
+// });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
@@ -54,17 +78,27 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-app.get("/urls", (req, res) => {
-  const urlsForUser = (user_id, urlDatabase) => {
+// buggy code
+// app.get("/urls", (req, res) => {
+//   const urlsForUser = (user_id, urlDatabase) => {
 
-  };
-  const regUserUrls = Object.keys(urlsForUser(user_id, urlDatabase));
-    if (!regUserUrls.includes(req.params.shortURL)) {
-       return res.status(401).send("Error 401. You are unauthorised to make changes here. Log in in order to do so.");
-     }
+//   };
+//   const regUserUrls = Object.keys(urlsForUser(user_id, urlDatabase));
+//     if (!regUserUrls.includes(req.params.shortURL)) {
+//        return res.status(401).send("Error 401. You are unauthorised to make changes here. Log in in order to do so.");
+//      }
+//   const templateVars = {
+//     user_id: req.cookies.user_id,
+//     urls: urlsForUser(urlDatabase, user_id),
+//     user: users[req.cookies.user_id]
+//   };
+//   res.render("urls_index", templateVars);
+// });
+
+app.get("/urls", (req, res) => {
   const templateVars = {
     user_id: req.cookies.user_id,
-    urls: urlsForUser(urlDatabase, user_id),
+    urls: urlDatabase,
     user: users[req.cookies.user_id]
   };
   res.render("urls_index", templateVars);
@@ -86,13 +120,21 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// GET register
+app.get("/register", (req, res) => {
+  const templateVars = {
+    user_id: req.cookies["user_id"],
+  };
+  res.render("urls_register", templateVars);
+});
+
 // GET login 
 app.get("/login", (req, res) => {
   const templateVars = {
     email: "",
     user_id: req.cookies.user_id
   };
-  console.log("159", req.cookies);
+  // console.log("159", req.cookies);
   res.render("urls_login", templateVars);
   req.cookies("user_id", user_id);
 }
@@ -117,6 +159,38 @@ app.post("/urls", (req, res) => {
   }
   res.redirect(`urls/${shortURL}`)
 });
+
+// POST register
+
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user_id = generateRandomString(8);
+  console.log("email=", email, "password", password);
+  
+  if (!email || !password) {
+    return res.status(400).send("400 Bad Request. Enter a valid email and password");
+  } else if (emailChecker(email, users)) {
+    return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
+  } else {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(password, salt, (err, hash) => {
+        const newUserId = generateRandomString(8);
+        const newUser = {
+          id: newUserId,
+          email: email,
+          password: hash
+        }
+        users[newUserId] = newUser;
+        console.log(users);
+      })
+    })
+  };
+  res.cookie("user_id", user_id);
+  console.log("1111", res.cookie);
+  res.redirect("/login");
+}
+);
 
 // POST login
 app.post("/login", (req, res) => {
