@@ -16,14 +16,15 @@ const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "dm3"},
   "9sm5xK": {longURL: "http://www.google.ca", user_id: "dm3"},
   "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "dm3"},
-  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "dm3"}
+  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "dm3"},
+  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "dm3"}
 };
 
 const users = {
   "dm3": {
     user_id: "dm3",
     email: "1@1.com",
-    //change to 'hash' later (ln 141)
+    //change to 'hash' later (ln 100 something)
     password: "1"
   },
   "Kakao": {
@@ -109,6 +110,7 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+// talk to mentors
 app.get("/urls/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   const templateVars = {
@@ -116,8 +118,8 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: longURL,
     user_id: req.cookies.user_id
   };
-  console.log("104", longURL);
-  res.render("urls_show", templateVars);
+  // console.log("104", longURL);
+  res.render("urls_shows", templateVars);
 });
 
 // GET register
@@ -141,6 +143,14 @@ app.get("/login", (req, res) => {
 );
 
 // POST fxns
+
+// talk to the mentors about the non existent? app.post("urls/:id") to get the short URLs page
+
+app.post("/urls/:shortURL", (req, res) => {
+  //Creat if logic to abort if unefined, return 404 or some error
+  urlDatabase[req.params.shortURL].longURL = req.body.newLongURL;
+  res.redirect(302, '/urls');
+});
 
 // Delete short links
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -166,26 +176,29 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user_id = generateRandomString(8);
-  console.log("email=", email, "password", password);
-  
+  // console.log("email=", email, "password", password);
+  // was email and pwd provided
   if (!email || !password) {
     return res.status(400).send("400 Bad Request. Enter a valid email and password");
-  } else if (emailChecker(email, users)) {
+  }
+  // does the user already exist
+  if (emailChecker(email, users)) {
     return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
-  } else {
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(password, salt, (err, hash) => {
-        const newUserId = generateRandomString(8);
-        const newUser = {
-          id: newUserId,
-          email: email,
-          password: hash
-        }
-        users[newUserId] = newUser;
-        console.log(users);
-      })
-    })
-  };
+  }
+  // else {
+  //   bcrypt.genSalt(10, (err, salt) => {
+  //     bcrypt.hash(password, salt, (err, hash) => {
+  //       const newUserId = generateRandomString(8);
+  //       const newUser = {
+  //         id: newUserId,
+  //         email: email,
+  //         password: hash
+  //       }
+  //       users[newUserId] = newUser;
+  //       console.log(users);
+  //     })
+  //   })
+  // };
   res.cookie("user_id", user_id);
   console.log("1111", res.cookie);
   res.redirect("/login");
