@@ -202,7 +202,7 @@ app.post("/register", (req, res) => {
     });
   res.cookie("user_id", user_id);
   // console.log("1111", res.cookie);
-  res.redirect("/urls");
+  res.redirect("/login");
 }
 );
 
@@ -228,5 +228,5 @@ app.post("/login", (req, res) => {
           
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
