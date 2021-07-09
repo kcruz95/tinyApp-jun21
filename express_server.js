@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -13,24 +14,23 @@ app.use(cookieParser());
 app.use(morgan('dev'));
 
 const urlDatabase = {
-  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "dm3"},
-  "9sm5xK": {longURL: "http://www.google.ca", user_id: "dm3"},
-  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "dm3"},
-  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "dm3"},
-  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "dm3"}
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "Juan"},
+  "9sm5xK": {longURL: "http://www.google.ca", user_id: "Juan"},
+  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "Juan"},
+  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "Juan"},
+  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "Juan"}
 };
 
 const users = {
-  "dm3": {
-    user_id: "dm3",
+  "Juan": {
+    user_id: "Juan",
     email: "1@1.com",
-    //change to 'hash' later (ln 100 something)
-    password: "1"
+    password: "$2b$10$eEO74HN9atOO5oBb1Uz9TujECcCW3UmFJWfvIgz40nlCxFji7AXXS"
   },
-  "Kakao": {
-    user_id: "Kakao",
+  "Toussaint": {
+    user_id: "Toussaint",
     email: "2@2.com",
-    password: "2"
+    password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
   }
 };
 
@@ -138,7 +138,7 @@ app.get("/login", (req, res) => {
   };
   // console.log("159", req.cookies);
   res.render("urls_login", templateVars);
-  req.cookies("user_id", user_id);
+  // req.cookies("user_id", user_id);
 }
 );
 
@@ -185,43 +185,38 @@ app.post("/register", (req, res) => {
   if (emailChecker(email, users)) {
     return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
   }
-  // else {
-  //   bcrypt.genSalt(10, (err, salt) => {
-  //     bcrypt.hash(password, salt, (err, hash) => {
-  //       const newUserId = generateRandomString(8);
-  //       const newUser = {
-  //         id: newUserId,
-  //         email: email,
-  //         password: hash
-  //       }
-  //       users[newUserId] = newUser;
-  //       console.log(users);
-  //     })
-  //   })
-  // };
+
+  // register w/ hash if new user
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(password, salt, (err, hash) => {
+        const newUser = {
+          user_id: user_id,
+          email: email,
+          password: hash
+        }
+        users[user_id] = newUser;
+        console.log(users);
+      })
+    });
   res.cookie("user_id", user_id);
-  console.log("1111", res.cookie);
-  res.redirect("/login");
+  // console.log("1111", res.cookie);
+  res.redirect("/urls");
 }
 );
 
 // POST login
 app.post("/login", (req, res) => {
-  const user_id = req.cookies;
   const email = req.body.email;
   const password = req.body.password;
-  console.log(req.body);
   if (!email || !password) {
-    console.log("line 170", email, password);
     res.status(403).send("Error 403 Bad Request. Please enter your user_id and password");
   } else if (!emailChecker(email, users)) {
     res.status(403).send("Error 403 Bad Request. Email not registered.");
   } else {
     const user = emailChecker (email, users)
-      if (password === user.password) {
-        console.log("HERE");
+    console.log("user", user);
+      if (bcrypt.compareSync(password, user.password)) {
         res.cookie("user_id", user.user_id);
-        console.log("176", res.cookie);
         res.redirect("/urls");
       } else {
         res.status(403).send("Error 403 Bad Request. Incorrect Password!");
