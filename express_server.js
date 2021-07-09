@@ -25,11 +25,13 @@ const users = {
   "Juan": {
     user_id: "Juan",
     email: "1@1.com",
+    // type in the number "1" on the input bar to input the hash printed below
     password: "$2b$10$eEO74HN9atOO5oBb1Uz9TujECcCW3UmFJWfvIgz40nlCxFji7AXXS"
   },
   "Toussaint": {
     user_id: "Toussaint",
     email: "2@2.com",
+    // same as ln 28 but input the number "2" instead
     password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
   }
 };
