@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
+// const assert should be in testing file not express
 const assert = require('chai');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -44,6 +45,7 @@ const users = {
     // same as ln 28 but input the number "2" instead
     password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
   }
+
 };
 
 // for generating short URLs
@@ -59,6 +61,7 @@ function generateRandomString() {
 }
 
 // check if an email is already registered
+// put this and any helper fxns in helpers.js
 const emailChecker = (email, users) => {
   for (let user in users) {
     if (email === users[user].email) {
@@ -73,7 +76,6 @@ const emailChecker = (email, users) => {
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}!`);
 });
-
 
 app.get("/urls/new", (req, res) => {
   if (!req.session) {
