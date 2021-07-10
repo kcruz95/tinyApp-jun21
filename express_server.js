@@ -3,10 +3,8 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
-const generateRandomString = require('./helpers')
-const emailChecker = require('./helpers')
-// const assert should be in testing file not express
-const assert = require('chai');
+const generateRandomString = require('./helpers');
+const emailChecker = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -17,11 +15,11 @@ app.use(express.urlencoded({
 }));
 app.use(bodyParser.urlencoded({
   extended: true}
-  ));
+));
 app.use(cookieSession({
   name: "session",
   keys: ["key1"]
-}))
+}));
 app.use(morgan('dev'));
 
 const urlDatabase = {
@@ -131,8 +129,8 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
     user_id: req.session.user_id,
-  }
-  res.redirect(`urls/${shortURL}`)
+  };
+  res.redirect(`urls/${shortURL}`);
 });
 
 // Delete short URL
@@ -140,7 +138,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   console.log(shortURL);
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 // POST register
@@ -159,21 +157,20 @@ app.post("/register", (req, res) => {
   }
 
   // register pwd w/ hash if new user
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(password, salt, (err, hash) => {
-        const newUser = {
-          user_id: user_id,
-          email: email,
-          password: hash
-        }
-        req.session.user_id = newUser.user_id;
-        users[user_id] = newUser;
-        console.log(users);
-        res.redirect("/urls");
-      })
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(password, salt, (err, hash) => {
+      const newUser = {
+        user_id: user_id,
+        email: email,
+        password: hash
+      };
+      req.session.user_id = newUser.user_id;
+      users[user_id] = newUser;
+      console.log(users);
+      res.redirect("/urls");
     });
-  }
-);
+  });
+});
 
 // POST login
 app.post("/login", (req, res) => {
@@ -184,14 +181,14 @@ app.post("/login", (req, res) => {
   } else if (!emailChecker(email, users)) {
     res.status(403).send("Error 403 Bad Request. Email not registered.");
   } else {
-    const user = emailChecker (email, users)
+    const user = emailChecker(email, users);
     console.log("user", user);
-      if (bcrypt.compareSync(password, user.password)) {
-        req.session.user_id = user.user_id;
-        res.redirect("/urls");
-      } else {
-        res.status(403).send("Error 403 Bad Request. Incorrect Password!");
-      }
+    if (bcrypt.compareSync(password, user.password)) {
+      req.session.user_id = user.user_id;
+      res.redirect("/urls");
+    } else {
+      res.status(403).send("Error 403 Bad Request. Incorrect Password!");
+    }
   }
 });
 
