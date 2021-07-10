@@ -14,18 +14,23 @@
     <div>
       <% if(!user_id) { %>
         <form method="GET" action="/login">
-          <a class="btn btn-primary"><button>Log In</button></a>
+          <a class="btn btn-primary">
+            <button>Log In</button>
+          </a>
         </form>
         <form method="GET" action="/register"> 
-        <a class="btn btn-primary"><button>Register</button></a>
+        <a class="btn btn-primary">
+          <button>Register</button>
+        </a>
         </form>
       <% } else { %>
         <p>
           You're logged in as: <%= user_id %>
-          <!-- user.email -->
         </p>
         <form method="POST" action="/logout">
-          <a class="btn btn-primary"><button>Log Out</button></a>
+          <a class="btn btn-primary">
+            <button>Log Out</button>
+          </a>
         </form>
       <% } %>
     </div>

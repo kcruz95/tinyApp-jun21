@@ -21,22 +21,9 @@
           <th scope="col">Delete</th>
         </tr>
       </thead>
-      <tbody>
-        <!--
-
-          {
-            "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "Juan"},
-            "9sm5xK": {longURL: "http://www.google.ca", user_id: "Juan"},
-            "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "Juan"},
-            "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "Juan"},
-            "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "Juan"}
-          };
-
-        -->
-        
+      <tbody>  
         <% for(let url in urls) { %>
           <tr>
-              <!-- https://website.com -->
               <td><a href="<%= urls[url]['longURL'] %>">
                 <%= url %></a></td>
             <td><%= urls[url]["longURL"] %></td>

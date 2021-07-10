@@ -1,13 +1,14 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-// const cookieParser = require("cookie-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
+const generateRandomString = require('./helpers')
+const emailChecker = require('./helpers')
 // const assert should be in testing file not express
 const assert = require('chai');
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 
@@ -17,7 +18,6 @@ app.use(express.urlencoded({
 app.use(bodyParser.urlencoded({
   extended: true}
   ));
-// app.use(cookieParser());
 app.use(cookieSession({
   name: "session",
   keys: ["key1"]
@@ -42,32 +42,9 @@ const users = {
   "Toussaint": {
     user_id: "Toussaint",
     email: "2@2.com",
-    // same as ln 28 but input the number "2" instead
+    // same as ln 37 but input the number "2" instead
     password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
   }
-
-};
-
-// for generating short URLs
-function generateRandomString() {
-  let result = "";
-  const inputChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const charLength = inputChars.length;
-  const length = 8;
-  for (i = 0; i < length; i = i + 1) {
-    result += inputChars.charAt(Math.floor(Math.random() * charLength));
-  }
-  return result;
-}
-
-// check if an email is already registered
-// put this and any helper fxns in helpers.js
-const emailChecker = (email, users) => {
-  for (let user in users) {
-    if (email === users[user].email) {
-      return users[user];
-    }
-  } return false;
 };
 
 // GET fxns
@@ -117,7 +94,6 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: longURL,
     user_id: req.session.user_id
   };
-  // console.log("128", longURL);
   res.render("urls_shows", templateVars);
 });
 
@@ -144,14 +120,13 @@ app.get("/login", (req, res) => {
 
 // POST fxns
 app.post("/urls/:shortURL", (req, res) => {
-  //Create if logic to abort if undefined, return 404 or some error
   urlDatabase[req.params.shortURL].longURL = req.body.newLongURL;
   res.redirect(302, '/urls');
 });
 
 // POST MyURLs page: generate a short URL
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
+  console.log(req.body);
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
@@ -173,7 +148,7 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user_id = generateRandomString(8);
-  // console.log("email=", email, "password", password);
+
   // was email and pwd provided
   if (!email || !password) {
     return res.status(400).send("400 Bad Request. Enter a valid email and password");
@@ -185,8 +160,6 @@ app.post("/register", (req, res) => {
 
   // register pwd w/ hash if new user
     bcrypt.genSalt(10, (err, salt) => {
-
-      // bcrypt.hash  bcrypt.hashSync
       bcrypt.hash(password, salt, (err, hash) => {
         const newUser = {
           user_id: user_id,
@@ -214,8 +187,6 @@ app.post("/login", (req, res) => {
     const user = emailChecker (email, users)
     console.log("user", user);
       if (bcrypt.compareSync(password, user.password)) {
-        // req.session --> { user_id: 'fjdksl' }
-
         req.session.user_id = user.user_id;
         res.redirect("/urls");
       } else {
