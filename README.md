@@ -4,9 +4,9 @@
 
  ## Final Product
 
- !["screenshot of the MyURLs page"](https://github.com/kcruz95/tinyApp/blob/4c3c0dbf0b836b79bf2d81c587cb81ae20ae43d8/docs/MyURLs.png?raw=true)
- !["screenshot of the Login page"](https://github.com/kcruz95/tinyApp/blob/4c3c0dbf0b836b79bf2d81c587cb81ae20ae43d8/docs/Login.png?raw=true)
- !["screenshot of the Register page"](https://github.com/kcruz95/tinyApp/blob/4c3c0dbf0b836b79bf2d81c587cb81ae20ae43d8/docs/Register.png?raw=true)
+ !["screenshot of the Login page"](https://github.com/kcruz95/tinyApp-jun21/blob/feature/user-registration/docs/Login-jun21.png)
+ !["screenshot of the MyURLs page"](https://github.com/kcruz95/tinyApp-jun21/blob/feature/user-registration/docs/MyURLs-jun21.png)
+ !["screenshot of the Register page"](https://github.com/kcruz95/tinyApp-jun21/blob/feature/user-registration/docs/Register-jun21.png)
 
  ## Dependencies
 
