@@ -26,7 +26,7 @@ const urlDatabase = {
   "9sm5xK": {longURL: "http://www.google.ca", user_id: "Juan"},
   "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "Juan"},
   "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "Juan"},
-  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "Juan"}
+  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "Toussaint"}
 };
 
 const users = {
@@ -89,7 +89,8 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: longURL,
-    user_id: req.session.user_id
+    user_id: req.session.user_id,
+    user: users[req.session.user_id]
   };
   res.render("urls_shows", templateVars);
 });
@@ -115,14 +116,32 @@ app.get("/login", (req, res) => {
 }
 );
 
+const loginStop = (req, res, urlDatabase) => {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].user_id) {
+    res.status(403).send("Error 403 Bad Request. Cannot change other user's URLs");
+    return false;
+  }
+  return true;
+};
+
 // POST fxns
+// if !logged in cannot access /urls
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL].longURL = req.body.newLongURL;
-  res.redirect(302, '/urls');
+  if (!req.session) {
+    return res.redirect("/login");
+  }
+  // if ! user, can't change other URLs
+  if (loginStop(req, res, urlDatabase)) {
+    urlDatabase[req.params.shortURL].longURL = req.body.newLongURL
+    res.redirect(302, '/urls');
+  }
 });
 
 // POST MyURLs page: generate a short URL
 app.post("/urls", (req, res) => {
+  if (!req.session) {
+    return res.redirect("/login");
+  }
   console.log(req.body);
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
@@ -156,22 +175,31 @@ app.post("/register", (req, res) => {
     return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
   }
 
-  // register pwd w/ hash if new user
-  // bcrypt.genSalt, bcrypt.genSaltSync
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
+  const newUser = {
+    user_id: user_id,
+    email: email,
+    password: hash
+  }
+  req.session.user_id = newUser.user_id;
+  users[user_id] = newUser;
+  console.log(users);
+  res.redirect("/urls");
 
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(password, salt, (err, hash) => {
-      const newUser = {
-        user_id: user_id,
-        email: email,
-        password: hash
-      };
-      req.session.user_id = newUser.user_id;
-      users[user_id] = newUser;
-      console.log(users);
-      res.redirect("/urls");
-    });
-  });
+  // bcrypt.genSalt(10, (err, salt) => {
+  //   bcrypt.hash(password, salt, (err, hash) => {
+  //     const newUser = {
+  //       user_id: user_id,
+  //       email: email,
+  //       password: hash
+  //     };
+  //     req.session.user_id = newUser.user_id;
+  //     users[user_id] = newUser;
+  //     console.log(users);
+  //     res.redirect("/urls");
+  //   });
+  // });
 });
 
 // POST login
