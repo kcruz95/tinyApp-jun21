@@ -3,8 +3,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
-const generateRandomString = require('./helpers');
-const emailChecker = require('./helpers');
+const { generateRandomString, emailChecker }= require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -152,11 +151,14 @@ app.post("/register", (req, res) => {
     return res.status(400).send("400 Bad Request. Enter a valid email and password");
   }
   // does the user already exist
+  console.log(users);
   if (emailChecker(email, users)) {
     return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
   }
 
   // register pwd w/ hash if new user
+  // bcrypt.genSalt, bcrypt.genSaltSync
+
   bcrypt.genSalt(10, (err, salt) => {
     bcrypt.hash(password, salt, (err, hash) => {
       const newUser = {
