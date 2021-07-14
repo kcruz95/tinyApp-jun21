@@ -10,23 +10,6 @@ function generateRandomString(desiredLength) {
   return result;
 };
 
-
-
-const users = {
-  "Juan": {
-    user_id: "Juan",
-    email: "1@1.com",
-    // type in the number "1" on the input bar to input the hash printed below
-    password: "$2b$10$eEO74HN9atOO5oBb1Uz9TujECcCW3UmFJWfvIgz40nlCxFji7AXXS"
-  },
-  "Toussaint": {
-    user_id: "Toussaint",
-    email: "2@2.com",
-    // same as ln 37 but input the number "2" instead
-    password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
-  }
-};
-
 // checks if an email is already registered
 const emailChecker = (email, database) => {
   const users = Object.keys(database);
@@ -39,8 +22,17 @@ const emailChecker = (email, database) => {
   return null;
 };
 
+// stops another user from altering/deleting another user's URLs
+const loginStop = (req, res, urlDatabase) => {
+  if (req.session.userId !== urlDatabase[req.params.shortURL].userId) {
+    res.status(403).send("Error 403 Bad Request. Cannot alter another user's URLs. Login as said user to do so.");
+    return false;
+  }
+  return true;
+};
 
 module.exports = {
   generateRandomString,
-  emailChecker
+  emailChecker,
+  loginStop
 };

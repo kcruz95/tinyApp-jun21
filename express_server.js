@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
-const { generateRandomString, emailChecker }= require('./helpers');
+const { generateRandomString, emailChecker, loginStop } = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -22,22 +22,22 @@ app.use(cookieSession({
 app.use(morgan('dev'));
 
 const urlDatabase = {
-  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", user_id: "Juan"},
-  "9sm5xK": {longURL: "http://www.google.ca", user_id: "Juan"},
-  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", user_id: "Juan"},
-  "i3BoGr": {longURL: "https://www.bbc.co.uk/", user_id: "Juan"},
-  "z7gyG4": {longURL: "https://www.france24.com/fr/", user_id: "Toussaint"}
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userId: "Juan"},
+  "9sm5xK": {longURL: "http://www.google.ca", userId: "Juan"},
+  "b6UTxQ": {longURL: "https://www.channelnewsasia.com/", userId: "Juan"},
+  "i3BoGr": {longURL: "https://www.bbc.co.uk/", userId: "Juan"},
+  "z7gyG4": {longURL: "https://www.france24.com/fr/", userId: "Toussaint"}
 };
 
 const users = {
   "Juan": {
-    user_id: "Juan",
+    userId: "Juan",
     email: "1@1.com",
     // type in the number "1" on the input bar to input the hash printed below
     password: "$2b$10$eEO74HN9atOO5oBb1Uz9TujECcCW3UmFJWfvIgz40nlCxFji7AXXS"
   },
   "Toussaint": {
-    user_id: "Toussaint",
+    userId: "Toussaint",
     email: "2@2.com",
     // same as ln 37 but input the number "2" instead
     password: "$2b$10$0ITqH9dFfHlxE6/Un6WhwOjvLLlCIMjJyUJdrbBb00jHkRAbKvtAi"
@@ -57,9 +57,9 @@ app.get("/urls/new", (req, res) => {
   }
   const templateVars = {
     urls: urlDatabase,
-    user_id: req.session.user_id
+    userId: req.session.userId
   };
-  if (templateVars.user_id) {
+  if (templateVars.userId) {
     res.render("urls_new", templateVars);
   } else {
     res.redirect("/login");
@@ -71,9 +71,9 @@ app.get("/urls", (req, res) => {
     return res.redirect("/login");
   }
   const templateVars = {
-    user_id: req.session.user_id,
+    userId: req.session.userId,
     urls: urlDatabase,
-    user: users[req.session.user_id]
+    user: users[req.session.userId]
   };
   res.render("urls_index", templateVars);
 });
@@ -89,8 +89,8 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: longURL,
-    user_id: req.session.user_id,
-    user: users[req.session.user_id]
+    userId: req.session.userId,
+    user: users[req.session.userId]
   };
   res.render("urls_shows", templateVars);
 });
@@ -101,7 +101,7 @@ app.get("/register", (req, res) => {
     return res.redirect("/login");
   }
   const templateVars = {
-    user_id: req.session["user_id"],
+    userId: req.session["userId"],
   };
   res.render("urls_register", templateVars);
 });
@@ -110,19 +110,11 @@ app.get("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = {
     email: "",
-    user_id: req.session.user_id
+    userId: req.session.userId
   };
   res.render("urls_login", templateVars);
 }
 );
-
-const loginStop = (req, res, urlDatabase) => {
-  if (req.session.user_id !== urlDatabase[req.params.shortURL].user_id) {
-    res.status(403).send("Error 403 Bad Request. Cannot change other user's URLs");
-    return false;
-  }
-  return true;
-};
 
 // POST fxns
 // if !logged in cannot access /urls
@@ -132,7 +124,7 @@ app.post("/urls/:shortURL", (req, res) => {
   }
   // if ! user, can't change other URLs
   if (loginStop(req, res, urlDatabase)) {
-    urlDatabase[req.params.shortURL].longURL = req.body.newLongURL
+    urlDatabase[req.params.shortURL].longURL = req.body.newLongURL;
     res.redirect(302, '/urls');
   }
 });
@@ -146,13 +138,20 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
-    user_id: req.session.user_id,
+    userId: req.session.userId,
   };
   res.redirect(`urls/${shortURL}`);
 });
 
 // Delete short URL
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if (!req.session) {
+    return res.redirect("/login");
+  }
+  if (loginStop(req, res, urlDatabase)) {
+    urlDatabase[req.params.shortURL].longURL = req.body.newLongURL;
+    res.redirect(302, '/urls');
+  }
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   console.log(shortURL);
@@ -163,7 +162,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user_id = generateRandomString(8);
+  const userId = generateRandomString();
 
   // was email and pwd provided
   if (!email || !password) {
@@ -178,24 +177,24 @@ app.post("/register", (req, res) => {
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(password, salt);
   const newUser = {
-    user_id: user_id,
+    userId: userId,
     email: email,
     password: hash
-  }
-  req.session.user_id = newUser.user_id;
-  users[user_id] = newUser;
+  };
+  req.session.userId = newUser.userId;
+  users[userId] = newUser;
   console.log(users);
   res.redirect("/urls");
 
   // bcrypt.genSalt(10, (err, salt) => {
   //   bcrypt.hash(password, salt, (err, hash) => {
   //     const newUser = {
-  //       user_id: user_id,
+  //       userId: userId,
   //       email: email,
   //       password: hash
   //     };
-  //     req.session.user_id = newUser.user_id;
-  //     users[user_id] = newUser;
+  //     req.session.userId = newUser.userId;
+  //     users[userId] = newUser;
   //     console.log(users);
   //     res.redirect("/urls");
   //   });
@@ -207,14 +206,14 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   if (!email || !password) {
-    res.status(403).send("Error 403 Bad Request. Please enter your user_id and password");
+    res.status(403).send("Error 403 Bad Request. Please enter your userId and password");
   } else if (!emailChecker(email, users)) {
     res.status(403).send("Error 403 Bad Request. Email not registered.");
   } else {
     const user = emailChecker(email, users);
     console.log("user", user);
     if (bcrypt.compareSync(password, user.password)) {
-      req.session.user_id = user.user_id;
+      req.session.userId = user.userId;
       res.redirect("/urls");
     } else {
       res.status(403).send("Error 403 Bad Request. Incorrect Password!");
