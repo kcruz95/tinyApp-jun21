@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const bcrypt = require('bcrypt');
-const { generateRandomString, emailChecker, loginStop } = require('./helpers');
+const { generateRandomString, emailChecker, loginStop, urlPerUser } = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -46,20 +46,15 @@ const users = {
 
 // GET fxns
 
-// determine if logged into server
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}!`);
-});
-
 app.get("/urls/new", (req, res) => {
-  if (!req.session) {
+  if (!req.session.userId) {
     return res.redirect("/login");
   }
   const templateVars = {
-    urls: urlDatabase,
-    userId: req.session.userId
+    urls: urlPerUser(req.session.userId, urlDatabase),
+    user: users[req.session.userId]
   };
-  if (templateVars.userId) {
+  if (templateVars.user) {
     res.render("urls_new", templateVars);
   } else {
     res.redirect("/login");
@@ -67,12 +62,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.session) {
+  if (!req.session.userId) {
     return res.redirect("/login");
   }
   const templateVars = {
     userId: req.session.userId,
-    urls: urlDatabase,
+    urls: urlPerUser(req.session.userId, urlDatabase),
     user: users[req.session.userId]
   };
   res.render("urls_index", templateVars);
@@ -97,11 +92,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // GET register: register page
 app.get("/register", (req, res) => {
-  if (!req.session) {
-    return res.redirect("/login");
-  }
   const templateVars = {
-    userId: req.session["userId"],
+    user: users[req.session.userId],
   };
   res.render("urls_register", templateVars);
 });
@@ -110,7 +102,7 @@ app.get("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = {
     email: "",
-    userId: req.session.userId
+    user: users[req.session.userId]
   };
   res.render("urls_login", templateVars);
 }
@@ -119,7 +111,7 @@ app.get("/login", (req, res) => {
 // POST fxns
 // if !logged in cannot access /urls
 app.post("/urls/:shortURL", (req, res) => {
-  if (!req.session) {
+  if (!req.session.userId) {
     return res.redirect("/login");
   }
   // if ! user, can't change other URLs
@@ -131,7 +123,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 // POST MyURLs page: generate a short URL
 app.post("/urls", (req, res) => {
-  if (!req.session) {
+  if (!req.session.userId) {
     return res.redirect("/login");
   }
   console.log(req.body);
@@ -145,7 +137,7 @@ app.post("/urls", (req, res) => {
 
 // Delete short URL
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!req.session) {
+  if (!req.session.userId) {
     return res.redirect("/login");
   }
   if (loginStop(req, res, urlDatabase)) {
@@ -163,7 +155,7 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const userId = generateRandomString();
-
+  console.log('userId ln 158', userId);
   // was email and pwd provided
   if (!email || !password) {
     return res.status(400).send("400 Bad Request. Enter a valid email and password");
@@ -173,7 +165,7 @@ app.post("/register", (req, res) => {
   if (emailChecker(email, users)) {
     return res.status(400).send(`400 Bad Request. ${email} is already registered. Please use it to log in.`);
   }
-
+  
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(password, salt);
   const newUser = {
@@ -185,22 +177,8 @@ app.post("/register", (req, res) => {
   users[userId] = newUser;
   console.log(users);
   res.redirect("/urls");
-
-  // bcrypt.genSalt(10, (err, salt) => {
-  //   bcrypt.hash(password, salt, (err, hash) => {
-  //     const newUser = {
-  //       userId: userId,
-  //       email: email,
-  //       password: hash
-  //     };
-  //     req.session.userId = newUser.userId;
-  //     users[userId] = newUser;
-  //     console.log(users);
-  //     res.redirect("/urls");
-  //   });
-  // });
 });
-
+      
 // POST login
 app.post("/login", (req, res) => {
   const email = req.body.email;
@@ -225,4 +203,9 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/login");
+});
+
+// determine if logged into server
+app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}!`);
 });

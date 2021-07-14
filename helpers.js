@@ -1,10 +1,10 @@
 // for generating randomised short URLs
-function generateRandomString(desiredLength) {
+function generateRandomString() {
   let result = "";
   const inputChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const charLength = inputChars.length;
-  const length = desiredLength;
-  for (i = 0; i < length; i = i + 1) {
+  const length = 8;
+  for (let i = 0; i < length; i = i + 1) {
     result += inputChars.charAt(Math.floor(Math.random() * charLength));
   }
   return result;
@@ -14,7 +14,7 @@ function generateRandomString(desiredLength) {
 const emailChecker = (email, database) => {
   const users = Object.keys(database);
   console.log(`Users: ${users}`);
-  for (user of users) {
+  for (const user of users) {
     if (email === database[user].email) {
       return database[user];
     }
@@ -31,8 +31,18 @@ const loginStop = (req, res, urlDatabase) => {
   return true;
 };
 
+const urlPerUser = (userId, urlDatabase) => {
+  const matchedUrls = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userId === userId) {
+      matchedUrls[shortURL] = urlDatabase[shortURL];
+    }
+  } return matchedUrls;
+}
+
 module.exports = {
   generateRandomString,
   emailChecker,
-  loginStop
+  loginStop,
+  urlPerUser
 };

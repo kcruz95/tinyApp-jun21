@@ -12,25 +12,19 @@
     </div>
 
     <div>
-      <% if(!userId) { %>
-        <form method="GET" action="/login">
-          <a class="btn btn-primary">
-            <button>Log In</button>
+      <% if(!user) { %>
+          <a class="btn btn-primary" href="/login">
+            Log In
           </a>
-        </form>
-        <form method="GET" action="/register"> 
-        <a class="btn btn-primary">
-          <button>Register</button>
-        </a>
-        </form>
+          <a class="btn btn-primary" href="/register">
+          Register
+          </a>
       <% } else { %>
         <p>
           You're logged in as: <%= user.email %>
         </p>
         <form method="POST" action="/logout">
-          <a class="btn btn-primary">
-            <button>Log Out</button>
-          </a>
+            <button class="btn btn-primary">Log Out</button>
         </form>
       <% } %>
     </div>
